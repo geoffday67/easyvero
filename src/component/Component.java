@@ -2,6 +2,7 @@ package component;
 
 import easyvero.Board;
 import easyvero.ConnectionPoint;
+import easyvero.GridPoint;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Node;
@@ -42,6 +43,10 @@ public abstract class Component extends Parent {
 
         // Create a list of the connection points
         connections = new ArrayList<>();
+    }
+    
+    protected Component(GridPoint start, GridPoint end) {
+        this(start.getX(), start.getY());
     }
 
     protected void setConnectionDrawables() {

@@ -8,6 +8,7 @@ package easyvero;
 import component.Component;
 import component.DIL8;
 import component.Wire;
+import java.awt.Point;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,9 @@ public class Board extends Region {
     private int height;
     private List<Component> components;
 
+    private GridPoint start;
+    private GridPoint end;
+
     Board(int width, int height) {
         components = new ArrayList<>();
 
@@ -57,7 +61,35 @@ public class Board extends Region {
                     Use an event handler on the component itself or on the board?
                 Show component under the drag as selected.
                  */
+ /*
+                MouseEntered = once per hole
+                MouseDragged = starts after clicking, continues to generate events at all positions on original hole
+                OnMouseDragEntered = no events (might need triggering?)
+                 */
                 hole.setOnMouseClicked(event -> {
+                    System.out.printf("Clicked for %s at %f, %f\n", event.getSource().toString(), event.getX(), event.getY());
+                });
+
+                hole.setOnMouseDragReleased(event -> {
+                    end = new GridPoint(event.getSource());
+                    System.out.printf("Ended at %d, %d\n", end.getX(), end.getY());
+
+                    Wire wire = new Wire(start, end);
+                    components.add(wire);
+                    getChildren().add(wire);
+                });
+
+                hole.setOnMouseDragEntered(event -> {
+                    System.out.printf("Entered for %s at %f, %f\n", event.getSource().toString(), event.getX(), event.getY());
+                });
+
+                hole.setOnDragDetected(event -> {
+                    start = new GridPoint(event.getSource());
+                    System.out.printf("Started at %d, %d\n", start.getX(), start.getY());
+                    hole.startFullDrag();
+                });
+
+                /*hole.setOnMouseClicked(event -> {
                     int x = (int) Math.floor(event.getX() + HOLE_RADIUS);
                     int y = (int) Math.floor(event.getY() + HOLE_RADIUS);
                     Component component = createComponent(x, y);
@@ -66,14 +98,12 @@ public class Board extends Region {
 
                         component.setOnMousePressed((e) -> {
                             selectComponent(component);
-                            System.out.printf("Mouse pressed %f, %f\n", e.getX(), e.getY());
                         });
 
                         components.add(component);
                         getChildren().add(component);
                     }
-                });
-
+                });*/
                 getChildren().add(hole);
             }
         }
@@ -144,7 +174,7 @@ public class Board extends Region {
             target.configure(result.get());
             return target;
         }
-        
+
         return null;
     }
 }
