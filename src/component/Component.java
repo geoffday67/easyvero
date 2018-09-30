@@ -26,6 +26,16 @@ public abstract class Component extends Parent {
         this.name = name;
     }
 
+    protected boolean selected = false;
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
     protected int x;
     protected int y;
     protected int width;
@@ -41,8 +51,9 @@ public abstract class Component extends Parent {
         return y;
     }
 
-    public void showDebug(boolean show) {}
-    
+    public void showDebug(boolean show) {
+    }
+
     public void setPosition(int x, int y) {
         // Remember the setting and set the translation to match
         this.x = x;
@@ -50,8 +61,8 @@ public abstract class Component extends Parent {
         positionTranslate.setX(x);
         positionTranslate.setY(y);
     }
-    
-    public void setSize (int width, int height) {
+
+    public void setSize(int width, int height) {
         this.width = width;
         this.height = height;
     }
@@ -63,7 +74,7 @@ public abstract class Component extends Parent {
 
         // Create a list of the connection points
         connections = new ArrayList<>();
-        
+
         getChildren().add(groupConnections);
         getChildren().add(groupOutline);
     }
@@ -79,9 +90,6 @@ public abstract class Component extends Parent {
     }
 
     public void configure(Object configObject) {
-    }
-
-    public void setSelected(boolean selected) {
     }
 
     public Pane getDialog() {

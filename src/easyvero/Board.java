@@ -9,6 +9,7 @@ import java.util.Optional;
 import javafx.geometry.Insets;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -24,8 +25,6 @@ public class Board extends Region {
     public static final Color ROW_COLOUR = Color.LIGHTCORAL;
     public static final Color PAD_COLOUR = Color.GREEN;
     public static final Color COMPONENT_COLOR = Color.GREEN;
-
-    private static final double INVALID_POSITION = -99.0;
 
     private int width;
     private int height;
@@ -44,6 +43,10 @@ public class Board extends Region {
 
         this.width = width;
         this.height = height;
+
+        this.setOnKeyPressed(keyEvent -> {
+            System.out.printf("Key pressed\n");
+        });
 
         // Draw the horizontal rows
         for (int h = 0; h < height; h++) {
@@ -111,7 +114,16 @@ public class Board extends Region {
             component.setSelected(component == target);
         }
     }
-
+    
+    private Component getSelectedComponent() {
+        for (Component component : components) {
+            if (component.isSelected())
+                return component;
+        }
+        
+        return null;
+    }
+    
     private void addComponent(Component component) {
         component.setOnMousePressed(event -> {
             selectComponent(component);
@@ -134,7 +146,7 @@ public class Board extends Region {
         component.setOnMouseDragged(event -> {
             if (moveInProgress) {
                 int dx = (int) Math.floor(((event.getSceneX() - moveStartX) / SCALE_FACTOR));
-                int dy = (int) Math.floor(((event.getSceneY()- moveStartY) / SCALE_FACTOR));
+                int dy = (int) Math.floor(((event.getSceneY() - moveStartY) / SCALE_FACTOR));
                 //System.out.printf("Moving by %d, %d\n", dx, dy);
                 component.setPosition(componentStartX + dx, componentStartY + dy);
             }
@@ -147,6 +159,22 @@ public class Board extends Region {
 
         components.add(component);
         getChildren().add(component);
+    }
+    
+    private void deleteComponent(Component component) {
+        components.remove(component);
+        getChildren().remove(component);
+    }
+
+    public void handleKeyPressed(KeyEvent keyEvent) {
+        switch (keyEvent.getCode()) {
+            case DELETE:
+                Component component = getSelectedComponent();
+                if (component != null) {
+                    deleteComponent(component);
+                }
+                break;
+        }
     }
 
     private Component createComponent(int x0, int y0) {

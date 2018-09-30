@@ -41,6 +41,7 @@ public class DIL extends Component {
 
     @Override
     public void setSelected(boolean selected) {
+        super.setSelected(selected);
         outline.setStroke(selected ? Color.BLUE : Board.COMPONENT_COLOR);
         outline.setStrokeWidth(selected ? 0.2 : 0.1);
     }
