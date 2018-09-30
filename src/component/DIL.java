@@ -10,48 +10,43 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-public class DIL8 extends Component {
+public class DIL extends Component {
 
-    public DIL8(int x, int y) {
-        super(x, y);
-    }
-
-    private Rectangle outline = null;
+    private Rectangle outline = new Rectangle();
 
     @Override
     public void configure(Object configObject) {
         Config config = (Config) configObject;
-        
-        connections.clear();
 
+        connections.clear();
         for (int n = 0; n < config.size / 2; n++) {
             connections.add(new ConnectionPoint(0, n));
         }
-
         for (int n = 0; n < config.size / 2; n++) {
             connections.add(new ConnectionPoint(config.gap + 1, n));
         }
-
         setConnectionDrawables();
 
-        outline = new Rectangle(-0.5, -0.5, config.gap + 2.0, config.size / 2);
+        groupOutline.getChildren().clear();
+        outline.setX(-0.5);
+        outline.setY(-0.5);
+        outline.setWidth(config.gap + 2.0);
+        outline.setHeight(config.size / 2);
         outline.setFill(Color.WHITE);
-        outline.setOpacity(0.6);
+        outline.setOpacity(0.8);
         outline.setStroke(Board.COMPONENT_COLOR);
         outline.setStrokeWidth(0.1);
-        getChildren().add(outline);
+        groupOutline.getChildren().add(outline);
     }
 
     @Override
     public void setSelected(boolean selected) {
-        if (outline != null) {
-            outline.setStroke(selected ? Color.BLUE : Board.COMPONENT_COLOR);
-            outline.setStrokeWidth(selected ? 0.2 : 0.1);
-        }
+        outline.setStroke(selected ? Color.BLUE : Board.COMPONENT_COLOR);
+        outline.setStrokeWidth(selected ? 0.2 : 0.1);
     }
 
     @Override
-    public Pane getComponentDialog() {
+    public Pane getDialog() {
         GridPane result = new GridPane();
         result.setHgap(10);
         result.setVgap(10);
@@ -78,11 +73,6 @@ public class DIL8 extends Component {
         return config;
     }
 
-    /*public static DIL8 createComponentFromConfig(int x, int y, Object config) {
-        DIL8 dil = new DIL8(x, y);
-        dil.configure((Config) config);
-        return dil;
-    }*/
     public static class Config {
 
         private int size;

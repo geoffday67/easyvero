@@ -24,6 +24,9 @@ public class GridPoint {
         if (source instanceof Circle) {
             x = (int) ((Circle) source).getCenterX();
             y = (int) ((Circle) source).getCenterY();
+        } else {
+            x = (int) ((Node) source).getLayoutX();
+            y = (int) ((Node) source).getLayoutY();
         }
     }
 }
