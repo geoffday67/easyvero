@@ -1,31 +1,65 @@
 package component;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import easyvero.Board;
 import easyvero.ConnectionPoint;
-import java.util.ArrayList;
+import static easyvero.EasyVero.objectMapper;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.transform.Translate;
 
-public abstract class Component extends Parent {
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "type")
+public abstract class Component {
 
-    protected Translate positionTranslate = new Translate();
-    protected List<ConnectionPoint> connections;
+    // Members which define how to create this component (save these)
+    protected int x;
+    protected int y;
+    protected int width;
+    protected int height;
 
-    private String name;
-
-    public String getName() {
-        return name;
+    public int getX() {
+        return x;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setX(int x) {
+        this.x = x;
+        positionTranslate.setX(x);
     }
 
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+        positionTranslate.setY(y);
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+        
+    // Members which help draw this component (don't save these, they'll be recreated during load)
+    @JsonIgnore
     protected boolean selected = false;
 
     public boolean isSelected() {
@@ -36,67 +70,73 @@ public abstract class Component extends Parent {
         this.selected = selected;
     }
 
-    protected int x;
-    protected int y;
-    protected int width;
-    protected int height;
-    protected Group groupConnections = new Group();
-    protected Group groupOutline = new Group();
+    private Translate positionTranslate = new Translate();
+    
+    protected Group groupComponent;
+    protected Group groupConnections;
+    protected Group groupOutline;
 
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public void showDebug(boolean show) {
+    @JsonIgnore
+    public Node getDrawable() {
+        return groupComponent;
     }
 
     public void setPosition(int x, int y) {
-        // Remember the setting and set the translation to match
-        this.x = x;
-        this.y = y;
-        positionTranslate.setX(x);
-        positionTranslate.setY(y);
+        setX(x);
+        setY(y);
     }
 
     public void setSize(int width, int height) {
-        this.width = width;
-        this.height = height;
+        setWidth(width);
+        setHeight(height);
     }
 
     protected Component() {
+        // Create the drawing groups
+        groupComponent = new Group();
+        groupConnections = new Group();
+        groupOutline = new Group();
+
+        // Add the connections and the outline to the component drawing
+        groupComponent.getChildren().addAll(groupConnections, groupOutline);
+
         // Create a translation transform for positioning the component
         positionTranslate = new Translate();
-        getTransforms().add(positionTranslate);
-
-        // Create a list of the connection points
-        connections = new ArrayList<>();
-
-        getChildren().add(groupConnections);
-        getChildren().add(groupOutline);
+        groupComponent.getTransforms().add(positionTranslate);
     }
 
-    protected void setConnectionDrawables() {
-        List<Node> children = groupConnections.getChildren();
-        children.clear();
+    /**
+     * Create drawables to represent the connection points. Call this after the
+     * connections are created.
+     */
+    protected void setConnectionDrawables(List<ConnectionPoint> connections) {
+        groupConnections.getChildren().clear();
         for (ConnectionPoint connection : connections) {
             Circle pad = new Circle(connection.x, connection.y, Board.HOLE_RADIUS);
             pad.setFill(Board.PAD_COLOUR);
-            children.add(pad);
+            groupConnections.getChildren().add(pad);
         }
     }
 
+    /**
+     * Configure the component using a component-specific configuration object
+     */
     public void configure(Object configObject) {
     }
 
+    /**
+     * Get a dialog pane for configuring the component
+     *
+     * @return The Pane or null if none if needed
+     */
+    @JsonIgnore
     public Pane getDialog() {
         return null;
     }
 
-    public Object getConfigFromDialog(Node dialog) {
-        return null;
+    /**
+     * Convert the completed dialog to a component-specific configuration object
+     */
+    public void configureFromDialog(Node dialog) {
     }
 }
