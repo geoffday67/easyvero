@@ -2,23 +2,36 @@ package easyvero;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Optional;
+import java.util.prefs.Preferences;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class EasyVero extends Application {
@@ -36,13 +49,32 @@ public class EasyVero extends Application {
 
     public static ObjectMapper objectMapper = new ObjectMapper();
 
+    private Stage stage;
     private Board board;
     private BorderPane main;
+    private File boardFile;
 
+    public void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setTitle(title);
+        alert.showAndWait();
+    }
+
+    public void showError(String title, Throwable exception) {
+        showError(title, exception.getMessage());
+    }
+
+    /*
+    On start up:
+        Check for filename passed in with parameters, otherwise show 'open/new' options with no board.
+    On save:
+        If there's a filename then use it otherwise show 'save as' dialog.
+     */
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
+
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        //objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
         main = new BorderPane();
 
@@ -73,12 +105,16 @@ public class EasyVero extends Application {
         ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton);
 
         // Menu
-        MenuItem saveItem = new MenuItem("Save");
-        saveItem.setOnAction(event -> save());
+        MenuItem newItem = new MenuItem("New");
+        newItem.setOnAction(event -> newBoard());
         MenuItem openItem = new MenuItem("Open");
         openItem.setOnAction(event -> open());
+        MenuItem saveItem = new MenuItem("Save");
+        saveItem.setOnAction(event -> save());
+        MenuItem saveAsItem = new MenuItem("Save as");
+        saveAsItem.setOnAction(event -> saveAs());
         Menu fileMenu = new Menu("File");
-        fileMenu.getItems().addAll(saveItem, openItem);
+        fileMenu.getItems().addAll(newItem, new SeparatorMenuItem(), openItem, new SeparatorMenuItem(), saveItem, saveAsItem);
         MenuBar menuBar = new MenuBar();
         menuBar.getMenus().addAll(fileMenu);
 
@@ -89,29 +125,133 @@ public class EasyVero extends Application {
             board.handleKeyPressed(keyEvent);
         });
 
+        stage.setResizable(false);
         stage.setTitle("EasyVero");
         stage.setScene(scene);
         stage.sizeToScene();
+        stage.setOnCloseRequest(ignore -> handleClose());
         stage.show();
     }
 
-    private void save() {
-        try (OutputStream output = new FileOutputStream("/Users/geoffday/Desktop/board.ev")) {
-            board.save(output);
-        } catch (IOException e) {
-            System.err.print(e.getMessage());
+    private void handleClose() {
+        // Show choice to save changes or discard before quitting
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setHeaderText("Save changes?");
+        ButtonType discard = new ButtonType("Discard");
+        ButtonType save = new ButtonType("Save");
+        alert.getButtonTypes().clear();
+        alert.getButtonTypes().addAll(discard, save);
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result != null && result.get() == save) {
+            save();
+        }
+    }
+    
+    private void setBoardFile(File file) {
+        boardFile = file;
+        Preferences.userRoot().put("boardfile", file.getAbsolutePath());
+    }
+
+    private void loadBoardFile() {
+        String filename = Preferences.userRoot().get("boardfile", "");
+        if (filename.length() > 0) {
+            loadFromFile(new File(filename));
+        }
+
+    }
+
+    private void setBoard() {
+        // Add the board to the centre of the main pane
+        Pane boardGroup = board.getGroup();
+        BorderPane.setMargin(boardGroup, new Insets(20, 20, 20, 20));
+        main.setCenter(boardGroup);
+
+        // Size the display area to match
+        stage.sizeToScene();
+    }
+
+    private void newBoard() {
+        GridPane content = new GridPane();
+        content.setHgap(10);
+        content.setVgap(10);
+
+        content.add(new Label("Width"), 0, 0);
+        TextField width = new TextField();
+        content.add(width, 1, 0);
+
+        content.add(new Label("Height"), 0, 1);
+        TextField height = new TextField();
+        content.add(height, 1, 1);
+
+        content.setPadding(new Insets(20));
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+        dialog.setTitle("New board");
+        Optional<ButtonType> result = dialog.showAndWait();
+
+        if (result != null && result.isPresent() && result.get() == ButtonType.OK) {
+            int new_width = Integer.parseInt(width.getText());
+            int new_height = Integer.parseInt(height.getText());
+            System.out.printf("Creating board %d x %d\n", new_width, new_height);
+            board = new Board(new_width, new_height);
+            setBoard();
         }
     }
 
-    private void open() {
-        try (InputStream input = new FileInputStream("/Users/geoffday/Desktop/board.ev")) {
-            board = objectMapper.readValue(input, Board.class);
-            Pane boardGroup = board.getGroup();
-            BorderPane.setMargin(boardGroup, new Insets(20, 20, 20, 20));
-            main.setCenter(boardGroup);
+    private void saveToFile(File file) {
+        System.out.printf("Saving to %s\n", file.getPath());
+
+        try (OutputStream output = new FileOutputStream(file)) {
+            board.save(output);
+            setBoardFile(file);
         } catch (IOException e) {
-            System.err.print(e.getMessage());
+            showError("Save board", e);
         }
+    }
+
+    private void loadFromFile(File file) {
+        System.out.printf("Loading %s\n", file.getPath());
+
+        try (InputStream input = new FileInputStream(file)) {
+            board = objectMapper.readValue(input, Board.class);
+            setBoard();
+            setBoardFile(file);
+        } catch (IOException e) {
+            showError("Open board", e);
+        }
+    }
+
+    private void saveAs() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save board as");
+        File file = fileChooser.showSaveDialog(stage);
+        if (file == null) {
+            return;
+        }
+
+        saveToFile(file);
+    }
+
+    private void save() {
+        if (boardFile == null) {
+            saveAs();
+            return;
+        }
+
+        saveToFile(boardFile);
+    }
+
+    private void open() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open board");
+        File file = fileChooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
+        }
+
+        loadFromFile(file);
     }
 
     /**

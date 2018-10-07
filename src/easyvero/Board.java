@@ -39,7 +39,6 @@ public class Board {
     public static final Color PAD_COLOUR = Color.GREEN;
     public static final Color COMPONENT_COLOR = Color.GREEN;
 
-    @JsonIgnore
     private Pane boardGroup;
 
     @JsonIgnore
@@ -49,6 +48,14 @@ public class Board {
 
     private int width;
     private int height;
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 
     private List<Component> components;
 
@@ -63,17 +70,11 @@ public class Board {
         }
     }
 
-    @JsonIgnore
     private GridPoint startDrag;
-    @JsonIgnore
     private boolean moveInProgress = false;
-    @JsonIgnore
     private double moveStartX;
-    @JsonIgnore
     private double moveStartY;
-    @JsonIgnore
     private int componentStartX;
-    @JsonIgnore
     private int componentStartY;
 
     @JsonCreator
@@ -95,7 +96,7 @@ public class Board {
             boardGroup.getChildren().add(line);
         }
 
-        // Draw the holes, and mouse handlers
+        // Draw the holes, add mouse handlers
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
                 Circle hole = new Circle(w, h, HOLE_RADIUS, Color.WHITE);
@@ -116,7 +117,7 @@ public class Board {
                     }
                 });
 
-                // Click to create a component, or select nothing
+                // Click to create a component
                 hole.setOnMouseClicked(event -> {
                     GridPoint position = new GridPoint(event.getSource());
                     Component component = createComponent(position.getX(), position.getY());
@@ -135,19 +136,6 @@ public class Board {
 
         boardGroup.setPrefWidth((width - 1) * SCALE_FACTOR);
         boardGroup.setPrefHeight((height - 1) * SCALE_FACTOR);
-
-        /*Wire wire = new Wire();
-        wire.setPosition(2, 2);
-        wire.setSize(3, 3);
-        addComponent(wire);*/
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
     }
 
     private void selectNone() {
@@ -195,7 +183,6 @@ public class Board {
             if (moveInProgress) {
                 int dx = (int) Math.floor(((event.getSceneX() - moveStartX) / SCALE_FACTOR));
                 int dy = (int) Math.floor(((event.getSceneY() - moveStartY) / SCALE_FACTOR));
-                //System.out.printf("Moving by %d, %d\n", dx, dy);
                 component.setPosition(componentStartX + dx, componentStartY + dy);
             }
         });
