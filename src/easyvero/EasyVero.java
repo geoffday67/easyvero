@@ -31,6 +31,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -40,6 +42,7 @@ public class EasyVero extends Application {
     public final static String BREAK_ID = "break";
     public final static String WIRE_ID = "wire";
     public final static String DIL_ID = "dil";
+    public final static String TEXT_ID = "text";
 
     private final static ToggleGroup toolGroup = new ToggleGroup();
 
@@ -64,12 +67,6 @@ public class EasyVero extends Application {
         showError(title, exception.getMessage());
     }
 
-    /*
-    On start up:
-        Check for filename passed in with parameters, otherwise show 'open/new' options with no board.
-    On save:
-        If there's a filename then use it otherwise show 'save as' dialog.
-     */
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -101,8 +98,12 @@ public class EasyVero extends Application {
         DILButton.setToggleGroup(toolGroup);
         DILButton.setUserData(DIL_ID);
 
+        RadioButton TextButton = new RadioButton("Text");
+        TextButton.setToggleGroup(toolGroup);
+        TextButton.setUserData(TEXT_ID);
+
         toolGroup.selectToggle(selectButton);
-        ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton);
+        ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton, TextButton);
 
         // Menu
         MenuItem newItem = new MenuItem("New");
@@ -137,16 +138,12 @@ public class EasyVero extends Application {
         // Show choice to save changes or discard before quitting
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setHeaderText("Save changes?");
-        ButtonType discard = new ButtonType("Discard");
-        ButtonType save = new ButtonType("Save");
-        alert.getButtonTypes().clear();
-        alert.getButtonTypes().addAll(discard, save);
         Optional<ButtonType> result = alert.showAndWait();
-        if (result != null && result.get() == save) {
+        if (result != null && result.get() == ButtonType.OK) {
             save();
         }
     }
-    
+
     private void setBoardFile(File file) {
         boardFile = file;
         Preferences.userRoot().put("boardfile", file.getAbsolutePath());

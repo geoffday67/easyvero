@@ -36,11 +36,11 @@ public class Wire extends Component {
         setConnectionDrawables(connections);
 
         groupOutline.getChildren().clear();
-        outline.setEndX(width - 1);
-        outline.setEndY(height - 1);
+        outline.setEndX((width - 1) * 100);
+        outline.setEndY((height - 1) * 100);
         outline.setOpacity(0.8);
         outline.setStroke(Board.COMPONENT_COLOR);
-        outline.setStrokeWidth(0.1);
+        outline.setStrokeWidth(10);
         groupOutline.getChildren().add(outline);
     }
 
@@ -48,6 +48,6 @@ public class Wire extends Component {
     public void setSelected(boolean selected) {
         super.setSelected(selected);
         outline.setStroke(selected ? Color.BLUE : Board.COMPONENT_COLOR);
-        outline.setStrokeWidth(selected ? 0.2 : 0.1);
+        outline.setStrokeWidth(selected ? 20 : 10);
     }
 }

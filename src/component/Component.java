@@ -13,16 +13,26 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
 import javafx.scene.transform.Translate;
+
+/*
+When creating a component specify its position, size, number of pins, etc. as one-per-division.
+When drawing multiply by 100.
+(i.e. data is 1-based, drawing is 100-based).
+*/
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Component {
 
+    static protected Font labelFont = new Font(100);
+    
     // Members which define how to create this component (save these)
     protected int x;
     protected int y;
     protected int width;
     protected int height;
+    protected String value;
 
     public int getX() {
         return x;
@@ -30,7 +40,7 @@ public abstract class Component {
 
     public void setX(int x) {
         this.x = x;
-        positionTranslate.setX(x);
+        positionTranslate.setX(x * 100);
     }
 
     public int getY() {
@@ -39,7 +49,7 @@ public abstract class Component {
 
     public void setY(int y) {
         this.y = y;
-        positionTranslate.setY(y);
+        positionTranslate.setY(y * 100);
     }
 
     public int getWidth() {
@@ -57,11 +67,19 @@ public abstract class Component {
     public void setHeight(int height) {
         this.height = height;
     }
-        
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+    
     // Members which help draw this component (don't save these, they'll be recreated during load)
     @JsonIgnore
     protected boolean selected = false;
-
+    
     public boolean isSelected() {
         return selected;
     }
@@ -70,11 +88,12 @@ public abstract class Component {
         this.selected = selected;
     }
 
-    private Translate positionTranslate = new Translate();
+    private Translate positionTranslate;
     
     protected Group groupComponent;
     protected Group groupConnections;
     protected Group groupOutline;
+    protected Group groupValue;
 
     @JsonIgnore
     public Node getDrawable() {
@@ -96,9 +115,10 @@ public abstract class Component {
         groupComponent = new Group();
         groupConnections = new Group();
         groupOutline = new Group();
+        groupValue = new Group();
 
         // Add the connections and the outline to the component drawing
-        groupComponent.getChildren().addAll(groupConnections, groupOutline);
+        groupComponent.getChildren().addAll(groupConnections, groupOutline, groupValue);
 
         // Create a translation transform for positioning the component
         positionTranslate = new Translate();
@@ -112,7 +132,7 @@ public abstract class Component {
     protected void setConnectionDrawables(List<ConnectionPoint> connections) {
         groupConnections.getChildren().clear();
         for (ConnectionPoint connection : connections) {
-            Circle pad = new Circle(connection.x, connection.y, Board.HOLE_RADIUS);
+            Circle pad = new Circle(connection.x * 100, connection.y * 100, Board.HOLE_RADIUS);
             pad.setFill(Board.PAD_COLOUR);
             groupConnections.getChildren().add(pad);
         }

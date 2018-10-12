@@ -1,5 +1,7 @@
 package easyvero;
 
+import Scaled.ScaledCircle;
+import Scaled.ScaledLine;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import component.Break;
 import component.Component;
 import component.DIL;
+import component.Label;
 import component.Wire;
 import static easyvero.EasyVero.objectMapper;
 import java.io.IOException;
@@ -32,9 +35,9 @@ import javafx.scene.transform.Scale;
 
 public class Board {
 
-    public static final double SCALE_FACTOR = 20.0;
-    public static final double PAD_SIZE = 0.8;
-    public static final double HOLE_RADIUS = 0.3;
+    public static final double SCALE_FACTOR = 0.2f;
+    public static final double PAD_SIZE = 80;
+    public static final double HOLE_RADIUS = 30;
     public static final Color ROW_COLOUR = Color.LIGHTCORAL;
     public static final Color PAD_COLOUR = Color.GREEN;
     public static final Color COMPONENT_COLOR = Color.GREEN;
@@ -70,7 +73,8 @@ public class Board {
         }
     }
 
-    private GridPoint startDrag;
+    private int dragStartX;
+    private int dragStartY;
     private boolean moveInProgress = false;
     private double moveStartX;
     private double moveStartY;
@@ -89,29 +93,31 @@ public class Board {
         this.height = height;
 
         // Draw the horizontal rows
-        for (int h = 0; h < height; h++) {
-            Line line = new Line(0, h, width - 1, h);
+        for (int h = 0; h < height; h ++) {
+            Line line = new Line(0, h * 100, (width - 1) * 100, h * 100);
             line.setStroke(ROW_COLOUR);
-            line.setStrokeWidth(0.75);
+            line.setStrokeWidth(75);
             boardGroup.getChildren().add(line);
         }
 
         // Draw the holes, add mouse handlers
         for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-                Circle hole = new Circle(w, h, HOLE_RADIUS, Color.WHITE);
+            for (int h = 0; h < height; h ++) {
+                Circle hole = new Circle(w * 100, h * 100, HOLE_RADIUS, Color.WHITE);
 
                 // Start dragging to create a component
                 hole.setOnDragDetected(event -> {
-                    startDrag = new GridPoint(event.getSource());
+                    dragStartX = snapX(event.getX());
+                    dragStartY = snapY(event.getY());
                     hole.startFullDrag();
                 });
 
                 // (Use DragEntered to draw the drag path)
                 // Stop dragging to create a component
                 hole.setOnMouseDragReleased(event -> {
-                    GridPoint position = new GridPoint(event.getSource());
-                    Component component = createComponent(startDrag.getX(), startDrag.getY(), position.getX() - startDrag.getX() + 1, position.getY() - startDrag.getY() + 1);
+                    int dragEndX = snapX(event.getX());
+                    int dragEndY = snapY(event.getY());
+                    Component component = createComponent(dragStartX, dragStartY, dragEndX - dragStartX + 1, dragEndY - dragStartY + 1);
                     if (component != null) {
                         addComponent(component);
                     }
@@ -119,8 +125,7 @@ public class Board {
 
                 // Click to create a component
                 hole.setOnMouseClicked(event -> {
-                    GridPoint position = new GridPoint(event.getSource());
-                    Component component = createComponent(position.getX(), position.getY());
+                    Component component = createComponent(snapX(event.getX()), snapY(event.getY()));
                     if (component != null) {
                         addComponent(component);
                     }
@@ -134,10 +139,18 @@ public class Board {
         Scale scale = new Scale(SCALE_FACTOR, SCALE_FACTOR, 0.0, 0.0);
         boardGroup.getTransforms().add(scale);
 
-        boardGroup.setPrefWidth((width - 1) * SCALE_FACTOR);
-        boardGroup.setPrefHeight((height - 1) * SCALE_FACTOR);
+        boardGroup.setPrefWidth((width - 1) * 100 * SCALE_FACTOR);
+        boardGroup.setPrefHeight((height - 1) * 100 * SCALE_FACTOR);
     }
 
+    private int snapX(double raw) {
+        return (int) (raw + 50) / 100;
+    }
+    
+    private int snapY(double raw) {
+        return (int) (raw + 50) / 100;
+    }
+    
     private void selectNone() {
         for (Component component : components) {
             component.setSelected(false);
@@ -229,6 +242,10 @@ public class Board {
 
             case EasyVero.WIRE_ID:
                 target = new Wire();
+                break;
+
+            case EasyVero.TEXT_ID:
+                target = new Label();
                 break;
         }
         if (target == null) {
