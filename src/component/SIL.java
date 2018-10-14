@@ -39,11 +39,11 @@ public class SIL extends Component {
     }
 
     private void draw() {
-        List<ConnectionPoint> connections = new ArrayList<>();
+        connections.clear();
         for (int n = 0; n < pins; n++) {
             connections.add(new ConnectionPoint(0, n));
         }
-        setConnectionDrawables(connections);
+        setConnectionDrawables();
 
         outline = new Rectangle();
         outline.setX(-50);

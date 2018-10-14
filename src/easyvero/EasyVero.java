@@ -41,6 +41,7 @@ public class EasyVero extends Application {
     public final static String SIL_ID = "sil";
     public final static String TEXT_ID = "text";
     public final static String RESISTOR_ID = "resistor";
+    public final static String TRACE_ID = "trace";
 
     private final static ToggleGroup toolGroup = new ToggleGroup();
 
@@ -100,16 +101,20 @@ public class EasyVero extends Application {
         SILButton.setToggleGroup(toolGroup);
         SILButton.setUserData(SIL_ID);
 
-        RadioButton TextButton = new RadioButton("Text");
-        TextButton.setToggleGroup(toolGroup);
-        TextButton.setUserData(TEXT_ID);
+        RadioButton textButton = new RadioButton("Text");
+        textButton.setToggleGroup(toolGroup);
+        textButton.setUserData(TEXT_ID);
 
-        RadioButton ResistorButton = new RadioButton("Resistor");
-        ResistorButton.setToggleGroup(toolGroup);
-        ResistorButton.setUserData(RESISTOR_ID);
+        RadioButton resistorButton = new RadioButton("Resistor");
+        resistorButton.setToggleGroup(toolGroup);
+        resistorButton.setUserData(RESISTOR_ID);
+
+        RadioButton traceButton = new RadioButton("Trace");
+        traceButton.setToggleGroup(toolGroup);
+        traceButton.setUserData(TRACE_ID);
 
         toolGroup.selectToggle(selectButton);
-        ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton, SILButton, TextButton, ResistorButton);
+        ToolBar toolBar = new ToolBar(selectButton, traceButton, breakButton, wireButton, DILButton, SILButton, textButton, resistorButton);
 
         // Menu
         MenuItem newItem = new MenuItem("New");
@@ -157,6 +162,11 @@ public class EasyVero extends Application {
         Preferences.userRoot().put("boardfile", file.getAbsolutePath());
     }
 
+    private void clearBoardFile() {
+        boardFile = null;
+        Preferences.userRoot().remove("boardfile");
+    }
+
     private void loadBoardFile() {
         String filename = Preferences.userRoot().get("boardfile", "");
         if (filename.length() > 0) {
@@ -199,9 +209,9 @@ public class EasyVero extends Application {
         if (result != null && result.isPresent() && result.get() == ButtonType.OK) {
             int new_width = Integer.parseInt(width.getText());
             int new_height = Integer.parseInt(height.getText());
-            System.out.printf("Creating board %d x %d\n", new_width, new_height);
             board = new Board(new_width, new_height);
             setBoard();
+            clearBoardFile();
         }
     }
 

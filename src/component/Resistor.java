@@ -66,10 +66,10 @@ public class Resistor extends Component {
             return;
         }
 
-        List<ConnectionPoint> connections = new ArrayList<>();
+        connections.clear();
         connections.add(new ConnectionPoint(0, 0));
         connections.add(new ConnectionPoint(width - 1, height - 1));
-        setConnectionDrawables(connections);
+        setConnectionDrawables();
 
         double dx = width - 1;
         double dy = height - 1;

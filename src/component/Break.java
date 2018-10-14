@@ -1,6 +1,9 @@
 package component;
 
 import easyvero.Board;
+import easyvero.ConnectionPoint;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -14,7 +17,15 @@ public class Break extends Component {
         draw();
     }
 
+    @Override
+    protected List<ConnectionPoint> getConnections(ConnectionPoint connection) {
+        return new ArrayList<>();
+    }
+
     private void draw() {
+        connections.clear();
+        connections.add(new ConnectionPoint(0, 0));
+
         groupOutline.getChildren().clear();
         outline = new Path();
         outline.setLayoutX(-35);

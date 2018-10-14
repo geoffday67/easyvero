@@ -31,6 +31,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
 import javafx.scene.transform.Scale;
 
 public class Board {
@@ -44,6 +47,7 @@ public class Board {
     public static final Color VALUE_COLOUR = Color.BLUE;
 
     private Pane boardGroup;
+    private Group traceGroup;
 
     @JsonIgnore
     public Pane getGroup() {
@@ -94,7 +98,7 @@ public class Board {
         this.height = height;
 
         // Draw the horizontal rows
-        for (int h = 0; h < height; h ++) {
+        for (int h = 0; h < height; h++) {
             Line line = new Line(0, h * 100, (width - 1) * 100, h * 100);
             line.setStroke(ROW_COLOUR);
             line.setStrokeWidth(75);
@@ -103,7 +107,7 @@ public class Board {
 
         // Draw the holes, add mouse handlers
         for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h ++) {
+            for (int h = 0; h < height; h++) {
                 Circle hole = new Circle(w * 100, h * 100, HOLE_RADIUS, Color.WHITE);
 
                 // Start dragging to create a component
@@ -126,18 +130,28 @@ public class Board {
 
                 // Click to create a component
                 hole.setOnMouseClicked(event -> {
-                    Component component = createComponent(snapX(event.getX()), snapY(event.getY()));
-                    if (component != null) {
-                        addComponent(component);
+                    int x = snapX(event.getX());
+                    int y = snapY(event.getY());
+                    if (EasyVero.getSelectedTool() == EasyVero.TRACE_ID) {
+                        trace(x, y);
+                    } else {
+                        Component component = createComponent(x, y);
+                        if (component != null) {
+                            addComponent(component);
+                        }
                     }
-                    
+
                     selectNone();
                 });
 
                 boardGroup.getChildren().add(hole);
             }
         }
-        
+
+        traceGroup = new Group();
+        //traceGroup.getTransforms().add(new Scale(100, 100, 0, 0));
+        boardGroup.getChildren().add(traceGroup);
+
         // Scale the board for display
         Scale scale = new Scale(SCALE_FACTOR, SCALE_FACTOR, 0.0, 0.0);
         boardGroup.getTransforms().add(scale);
@@ -149,11 +163,11 @@ public class Board {
     private int snapX(double raw) {
         return (int) (raw + 50) / 100;
     }
-    
+
     private int snapY(double raw) {
         return (int) (raw + 50) / 100;
     }
-    
+
     private void selectNone() {
         for (Component component : components) {
             component.setSelected(false);
@@ -261,7 +275,7 @@ public class Board {
             case EasyVero.TEXT_ID:
                 target = new Label();
                 break;
-                
+
             case EasyVero.RESISTOR_ID:
                 target = new Resistor();
                 break;
@@ -273,13 +287,14 @@ public class Board {
         target.setPosition(x0, y0);
         target.setSize(x1, y1);
 
-        if (configureComponent(target))
+        if (configureComponent(target)) {
             return target;
+        }
 
         return null;
     }
-    
-    private boolean configureComponent (Component component) {
+
+    private boolean configureComponent(Component component) {
         final Pane content = component.getDialog();
         if (content == null) {
             return true;
@@ -297,7 +312,7 @@ public class Board {
             component.configureFromDialog(content);
             return true;
         }
-        
+
         return false;
     }
 
@@ -307,5 +322,98 @@ public class Board {
         } catch (JsonProcessingException ex) {
             Logger.getLogger(Component.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void trace(int x, int y) {
+        traceGroup.getChildren().clear();
+        traceRow(x, y);
+    }
+
+    /*
+    Trace connected pads.
+    Starting from a known pad, examine the next one along:
+        If it doesn't have a component in it then add it to the list.
+        If it does have a component then get that component's list of connections and add them to the list.
+    Stop when there's no more to examine (because we're at the edge of the board or on a component with no connections).
+     */
+    private void traceRow(int x, int y) {
+        traceRowLeft(x, y);
+        traceRowRight(x, y);
+    }
+
+    private void traceRowRight(int x, int y) {
+        Path segment = new Path();
+        segment.setStroke(Color.RED);
+        segment.setStrokeWidth(10);
+        segment.getElements().add(new MoveTo(x * 100, y * 100));
+
+        while (true) {
+            // Look at the point to the right of where we are, see how many points to add the trace.
+            List<GridPoint> points = getTraceablePoints(x + 1, y);
+            if (points.isEmpty()) {
+                // None, we've finished with this row
+                break;
+            }
+
+            x++;
+        }
+
+        segment.getElements().add(new LineTo(x * 100, y * 100));
+        traceGroup.getChildren().add(segment);
+    }
+
+    private void traceRowLeft(int x, int y) {
+        Path segment = new Path();
+        segment.setStroke(Color.RED);
+        segment.setStrokeWidth(10);
+        segment.getElements().add(new MoveTo(x * 100, y * 100));
+
+        while (true) {
+            List<GridPoint> points = getTraceablePoints(x - 1, y);
+            if (points.isEmpty()) {
+                break;
+            }
+
+            x--;
+        }
+
+        segment.getElements().add(new LineTo(x * 100, y * 100));
+        traceGroup.getChildren().add(segment);
+    }
+
+    /**
+     * Get a list of points to add to the trace. Could be zero, one or more
+     * points.
+     *
+     * @param x The point to test.
+     * @param y The point to test.
+     * @return The list of points (most likely just this one).
+     */
+    private List<GridPoint> getTraceablePoints(int x, int y) {
+        List<GridPoint> result = new ArrayList<>();
+        boolean foundComponent = false;
+
+        if (x < 0 || x >= width) {
+            // This point is off the board so return the empty list
+            return result;
+        }
+
+        // Check the components on the board for any which have a connection point here
+        for (Component component : components) {
+            List<GridPoint> points = component.getConnectedPoints(x - component.getX(), y - component.getY());
+
+            if (points != null) {
+                // The component has something to say, because this point matched one of its connection points
+                result.addAll(points);
+                foundComponent = true;
+            }
+        }
+        
+        // If the components had nothing to contribute just return the test point
+        if (!foundComponent) {
+            result.add(new GridPoint(x, y));
+        }
+
+        return result;
     }
 }

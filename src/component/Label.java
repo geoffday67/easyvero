@@ -22,7 +22,7 @@ public class Label extends Component {
         
         box.setMinHeight(200);
         box.setLayoutY(-100);
-        box.setLayoutX(50);
+        box.setLayoutX(30);
         box.setAlignment(Pos.CENTER_LEFT);
         box.getChildren().add(text);
 

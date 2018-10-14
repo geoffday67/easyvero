@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import easyvero.Board;
 import easyvero.ConnectionPoint;
+import easyvero.GridPoint;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -23,7 +25,7 @@ public abstract class Component {
 
     static protected Font valueFont = new Font(80);
     static protected Border testBorder = new Border(new BorderStroke(Color.RED, BorderStrokeStyle.DASHED, CornerRadii.EMPTY, new BorderWidths(10)));
-    
+
     // Members which define how to create this component (save these)
     protected int x;
     protected int y;
@@ -72,11 +74,11 @@ public abstract class Component {
     public void setValue(String value) {
         this.value = value;
     }
-    
+
     // Members which help draw this component (don't save these, they'll be recreated during load)
     @JsonIgnore
     protected boolean selected = false;
-    
+
     public boolean isSelected() {
         return selected;
     }
@@ -86,7 +88,8 @@ public abstract class Component {
     }
 
     private Translate positionTranslate;
-    
+    protected List<ConnectionPoint> connections;
+
     protected Group groupComponent;
     protected Group groupConnections;
     protected Group groupOutline;
@@ -120,19 +123,49 @@ public abstract class Component {
         // Create a translation transform for positioning the component
         positionTranslate = new Translate();
         groupComponent.getTransforms().add(positionTranslate);
+
+        connections = new ArrayList<>();
     }
 
     /**
      * Create drawables to represent the connection points. Call this after the
      * connections are created.
      */
-    protected void setConnectionDrawables(List<ConnectionPoint> connections) {
+    protected void setConnectionDrawables() {
         groupConnections.getChildren().clear();
         for (ConnectionPoint connection : connections) {
             Circle pad = new Circle(connection.x * 100, connection.y * 100, Board.HOLE_RADIUS);
             pad.setFill(Board.PAD_COLOUR);
             groupConnections.getChildren().add(pad);
         }
+    }
+
+    /**
+     * Get the connection points which are connected to this one.
+     */
+    protected List<ConnectionPoint> getConnections(ConnectionPoint connection) {
+        // Default to just the original point itself
+        List<ConnectionPoint> result = new ArrayList<>();
+        result.add(connection);
+        return result;
+    }
+
+    /**
+     * Get a list of connected points given an initial point. Returns null if
+     * the point isn't one of this component's connections.
+     */
+    public List<GridPoint> getConnectedPoints(int x, int y) {
+        for (ConnectionPoint point : connections) {
+            if (point.x == x && point.y == y) {
+                List<GridPoint> result = new ArrayList<>();
+                for (ConnectionPoint connected : getConnections(point)) {
+                    result.add(new GridPoint(connected.x, connected.y));
+                }
+                return result;
+            }
+        }
+
+        return null;
     }
 
     /**

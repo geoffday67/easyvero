@@ -30,10 +30,10 @@ public class Wire extends Component {
     }
 
     private void draw() {
-        List<ConnectionPoint> connections = new ArrayList<>();
+        connections.clear();
         connections.add(new ConnectionPoint(0, 0));
         connections.add(new ConnectionPoint(width - 1, height - 1));
-        setConnectionDrawables(connections);
+        setConnectionDrawables();
 
         groupOutline.getChildren().clear();
         outline.setEndX((width - 1) * 100);
