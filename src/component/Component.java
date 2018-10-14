@@ -2,37 +2,34 @@ package component;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import easyvero.Board;
 import easyvero.ConnectionPoint;
-import static easyvero.EasyVero.objectMapper;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Translate;
 
-/*
-When creating a component specify its position, size, number of pins, etc. as one-per-division.
-When drawing multiply by 100.
-(i.e. data is 1-based, drawing is 100-based).
-*/
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Component {
 
-    static protected Font labelFont = new Font(100);
+    static protected Font valueFont = new Font(80);
+    static protected Border testBorder = new Border(new BorderStroke(Color.RED, BorderStrokeStyle.DASHED, CornerRadii.EMPTY, new BorderWidths(10)));
     
     // Members which define how to create this component (save these)
     protected int x;
     protected int y;
     protected int width;
     protected int height;
-    protected String value;
+    protected String value = "";
 
     public int getX() {
         return x;
@@ -136,12 +133,6 @@ public abstract class Component {
             pad.setFill(Board.PAD_COLOUR);
             groupConnections.getChildren().add(pad);
         }
-    }
-
-    /**
-     * Configure the component using a component-specific configuration object
-     */
-    public void configure(Object configObject) {
     }
 
     /**

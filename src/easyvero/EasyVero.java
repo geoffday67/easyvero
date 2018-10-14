@@ -14,7 +14,6 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -23,7 +22,6 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
@@ -31,8 +29,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -42,7 +38,9 @@ public class EasyVero extends Application {
     public final static String BREAK_ID = "break";
     public final static String WIRE_ID = "wire";
     public final static String DIL_ID = "dil";
+    public final static String SIL_ID = "sil";
     public final static String TEXT_ID = "text";
+    public final static String RESISTOR_ID = "resistor";
 
     private final static ToggleGroup toolGroup = new ToggleGroup();
 
@@ -98,12 +96,20 @@ public class EasyVero extends Application {
         DILButton.setToggleGroup(toolGroup);
         DILButton.setUserData(DIL_ID);
 
+        RadioButton SILButton = new RadioButton("SIL");
+        SILButton.setToggleGroup(toolGroup);
+        SILButton.setUserData(SIL_ID);
+
         RadioButton TextButton = new RadioButton("Text");
         TextButton.setToggleGroup(toolGroup);
         TextButton.setUserData(TEXT_ID);
 
+        RadioButton ResistorButton = new RadioButton("Resistor");
+        ResistorButton.setToggleGroup(toolGroup);
+        ResistorButton.setUserData(RESISTOR_ID);
+
         toolGroup.selectToggle(selectButton);
-        ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton, TextButton);
+        ToolBar toolBar = new ToolBar(selectButton, breakButton, wireButton, DILButton, SILButton, TextButton, ResistorButton);
 
         // Menu
         MenuItem newItem = new MenuItem("New");
@@ -132,6 +138,8 @@ public class EasyVero extends Application {
         stage.sizeToScene();
         stage.setOnCloseRequest(ignore -> handleClose());
         stage.show();
+        
+        loadBoardFile();
     }
 
     private void handleClose() {

@@ -38,7 +38,6 @@ public class Wire extends Component {
         groupOutline.getChildren().clear();
         outline.setEndX((width - 1) * 100);
         outline.setEndY((height - 1) * 100);
-        outline.setOpacity(0.8);
         outline.setStroke(Board.COMPONENT_COLOR);
         outline.setStrokeWidth(10);
         groupOutline.getChildren().add(outline);

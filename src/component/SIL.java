@@ -1,26 +1,27 @@
 package component;
 
+import static component.Component.valueFont;
 import easyvero.Board;
 import easyvero.ConnectionPoint;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
+import javafx.scene.transform.Rotate;
 
-public class DIL extends Component {
+public class SIL extends Component {
 
-    private int pins = 0;   // Total number of pins, so must be a even number
-    private int span = 0;   // The number of holes between the legs
-    private Rectangle outline;
+    private int pins = 0;
+    private Rectangle outline = new Rectangle();
 
     public int getPins() {
         return pins;
@@ -31,15 +32,6 @@ public class DIL extends Component {
         draw();
     }
 
-    public int getSpan() {
-        return span;
-    }
-
-    public void setSpan(int span) {
-        this.span = span;
-        draw();
-    }
-
     @Override
     public void setValue(String value) {
         super.setValue(value);
@@ -47,24 +39,17 @@ public class DIL extends Component {
     }
 
     private void draw() {
-        if (pins == 0 || span == 0) {
-            return;
-        }
-
         List<ConnectionPoint> connections = new ArrayList<>();
-        for (int n = 0; n < pins / 2; n++) {
+        for (int n = 0; n < pins; n++) {
             connections.add(new ConnectionPoint(0, n));
-        }
-        for (int n = 0; n < pins / 2; n++) {
-            connections.add(new ConnectionPoint(span + 1, n));
         }
         setConnectionDrawables(connections);
 
         outline = new Rectangle();
         outline.setX(-50);
         outline.setY(-40);
-        outline.setWidth((span + 2) * 100);
-        outline.setHeight((pins / 2) * 100);
+        outline.setWidth(100);
+        outline.setHeight(pins * 100);
         outline.setFill(Color.TRANSPARENT);
         outline.setStroke(Board.COMPONENT_COLOR);
         outline.setStrokeWidth(10);
@@ -75,17 +60,23 @@ public class DIL extends Component {
     }
 
     private void drawValue() {
-        if (pins == 0 || span == 0) {
+        if (pins == 0) {
             return;
         }
 
-        Text text = new Text(outline.getX() - 1000, 100, value);
-        text.setFill(Board.VALUE_COLOUR);
+        Text text = new Text(value);
         text.setFont(valueFont);
-        text.setWrappingWidth(outline.getWidth() + 2000);
-        text.setTextAlignment(TextAlignment.CENTER);
+        text.setFill(Board.VALUE_COLOUR);
+
+        HBox box = new HBox();
+        box.setAlignment(Pos.CENTER);
+        box.setMinWidth((pins - 1) * 100);
+        box.setMinHeight(text.getBoundsInLocal().getHeight() + 100);
+        box.getTransforms().add(new Rotate(90));
+        box.getChildren().add(text);
+
         groupValue.getChildren().clear();
-        groupValue.getChildren().add(text);
+        groupValue.getChildren().add(box);
     }
 
     @Override
@@ -101,8 +92,8 @@ public class DIL extends Component {
         result.setHgap(10);
         result.setVgap(10);
 
-        result.add(new Label("Pins"), 0, 0);
-        Spinner<Integer> pinsSpinner = new Spinner(6, 100, 8, 2);
+        result.add(new javafx.scene.control.Label("Pins"), 0, 0);
+        Spinner<Integer> pinsSpinner = new Spinner(2, 100, 3, 1);
         pinsSpinner.setId("pins");
         pinsSpinner.setEditable(true);
         if (pins > 0) {
@@ -110,15 +101,7 @@ public class DIL extends Component {
         }
         result.add(pinsSpinner, 1, 0);
 
-        result.add(new Label("Span"), 0, 1);
-        Spinner spanSpinner = new Spinner(1, 100, 2);
-        spanSpinner.setId("span");
-        if (span > 0) {
-            spanSpinner.getValueFactory().setValue(span);
-        }
-        result.add(spanSpinner, 1, 1);
-
-        result.add(new Label("Value"), 0, 2);
+        result.add(new javafx.scene.control.Label("Value"), 0, 2);
         TextField valueText = new TextField(value);
         valueText.setId("value");
         result.add(valueText, 1, 2);
@@ -130,8 +113,7 @@ public class DIL extends Component {
 
     @Override
     public void configureFromDialog(Node dialog) {
-        setPins (((Spinner<Integer>) dialog.lookup("#pins")).getValue());
-        setSpan (((Spinner<Integer>) dialog.lookup("#span")).getValue());
-        setValue (((TextField) dialog.lookup("#value")).getText());
+        setPins(((Spinner<Integer>) dialog.lookup("#pins")).getValue());
+        setValue(((TextField) dialog.lookup("#value")).getText());
     }
 }

@@ -1,7 +1,5 @@
 package easyvero;
 
-import Scaled.ScaledCircle;
-import Scaled.ScaledLine;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,6 +9,8 @@ import component.Break;
 import component.Component;
 import component.DIL;
 import component.Label;
+import component.Resistor;
+import component.SIL;
 import component.Wire;
 import static easyvero.EasyVero.objectMapper;
 import java.io.IOException;
@@ -38,9 +38,10 @@ public class Board {
     public static final double SCALE_FACTOR = 0.2f;
     public static final double PAD_SIZE = 80;
     public static final double HOLE_RADIUS = 30;
-    public static final Color ROW_COLOUR = Color.LIGHTCORAL;
+    public static final Color ROW_COLOUR = Color.BLANCHEDALMOND;
     public static final Color PAD_COLOUR = Color.GREEN;
     public static final Color COMPONENT_COLOR = Color.GREEN;
+    public static final Color VALUE_COLOUR = Color.BLUE;
 
     private Pane boardGroup;
 
@@ -129,12 +130,14 @@ public class Board {
                     if (component != null) {
                         addComponent(component);
                     }
+                    
+                    selectNone();
                 });
 
                 boardGroup.getChildren().add(hole);
             }
         }
-
+        
         // Scale the board for display
         Scale scale = new Scale(SCALE_FACTOR, SCALE_FACTOR, 0.0, 0.0);
         boardGroup.getTransforms().add(scale);
@@ -178,6 +181,12 @@ public class Board {
             selectComponent(component);
         });
 
+        component.getDrawable().setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                configureComponent(component);
+            }
+        });
+
         // Store initial positions so we can move the component later
         component.getDrawable().setOnDragDetected(event -> {
             // Get the drag start position (scaled)
@@ -194,8 +203,8 @@ public class Board {
         // Move the component based on the difference between now and the start
         component.getDrawable().setOnMouseDragged(event -> {
             if (moveInProgress) {
-                int dx = (int) Math.floor(((event.getSceneX() - moveStartX) / SCALE_FACTOR));
-                int dy = (int) Math.floor(((event.getSceneY() - moveStartY) / SCALE_FACTOR));
+                int dx = (int) Math.floor(((event.getSceneX() - moveStartX) / SCALE_FACTOR / 100));
+                int dy = (int) Math.floor(((event.getSceneY() - moveStartY) / SCALE_FACTOR / 100));
                 component.setPosition(componentStartX + dx, componentStartY + dy);
             }
         });
@@ -211,11 +220,12 @@ public class Board {
 
     private void deleteComponent(Component component) {
         components.remove(component);
-        boardGroup.getChildren().remove(component);
+        boardGroup.getChildren().remove(component.getDrawable());
     }
 
     public void handleKeyPressed(KeyEvent keyEvent) {
         switch (keyEvent.getCode()) {
+            case BACK_SPACE:
             case DELETE:
                 Component component = getSelectedComponent();
                 if (component != null) {
@@ -240,12 +250,20 @@ public class Board {
                 target = new DIL();
                 break;
 
+            case EasyVero.SIL_ID:
+                target = new SIL();
+                break;
+
             case EasyVero.WIRE_ID:
                 target = new Wire();
                 break;
 
             case EasyVero.TEXT_ID:
                 target = new Label();
+                break;
+                
+            case EasyVero.RESISTOR_ID:
+                target = new Resistor();
                 break;
         }
         if (target == null) {
@@ -255,27 +273,32 @@ public class Board {
         target.setPosition(x0, y0);
         target.setSize(x1, y1);
 
-        final Dialog<ButtonType> dialog = new Dialog<>();
-
-        // Get the component's config dialog if any
-        final Pane content = target.getDialog();
-        if (content == null) {
+        if (configureComponent(target))
             return target;
+
+        return null;
+    }
+    
+    private boolean configureComponent (Component component) {
+        final Pane content = component.getDialog();
+        if (content == null) {
+            return true;
         }
 
+        Dialog<ButtonType> dialog = new Dialog<>();
         content.setPadding(new Insets(20));
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
-        dialog.setTitle("New component");
+        dialog.setTitle("Configure component");
         Optional<ButtonType> result = dialog.showAndWait();
 
         if (result != null && result.isPresent() && result.get() == ButtonType.OK) {
-            target.configureFromDialog(content);
-            return target;
+            component.configureFromDialog(content);
+            return true;
         }
-
-        return null;
+        
+        return false;
     }
 
     public void save(OutputStream output) throws IOException {
