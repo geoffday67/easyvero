@@ -329,18 +329,39 @@ public class Board {
         traceRow(x, y);
     }
 
-    /*
-    Trace connected pads.
-    Starting from a known pad, examine the next one along:
-        If it doesn't have a component in it then add it to the list.
-        If it does have a component then get that component's list of connections and add them to the list.
-    Stop when there's no more to examine (because we're at the edge of the board or on a component with no connections).
-     */
     private void traceRow(int x, int y) {
-        traceRowLeft(x, y);
-        traceRowRight(x, y);
+        traceRowSideways(x, y, -1);
+        traceRowSideways(x, y, 1);
     }
 
+    private void traceRowSideways(int x, int y, int dx) {
+        Path segment = new Path();
+        segment.setStroke(Color.RED);
+        segment.setStrokeWidth(10);
+        segment.getElements().add(new MoveTo(x * 100, y * 100));
+
+        while (true) {
+            // Look at the point to the side of where we are, see how many points to add the trace.
+            List<GridPoint> points = getTraceablePoints(x + dx, y);
+            if (points.isEmpty()) {
+                // None, we've finished with this row
+                break;
+            }
+
+            // Look at the connected points, if there are any from another row then start tracing that row.
+            for (GridPoint point : points) {
+                if (point.getY() != y) {
+                    traceRow(point.getX(), point.getY());
+                }
+            }
+
+            x += dx;
+        }
+
+        segment.getElements().add(new LineTo(x * 100, y * 100));
+        traceGroup.getChildren().add(segment);
+    }
+    
     private void traceRowRight(int x, int y) {
         Path segment = new Path();
         segment.setStroke(Color.RED);
@@ -353,6 +374,13 @@ public class Board {
             if (points.isEmpty()) {
                 // None, we've finished with this row
                 break;
+            }
+
+            // Look at the connected points, if there are any from another row then start tracing that row.
+            for (GridPoint point : points) {
+                if (point.getY() != y) {
+                    traceRow(point.getX(), point.getY());
+                }
             }
 
             x++;
@@ -372,6 +400,12 @@ public class Board {
             List<GridPoint> points = getTraceablePoints(x - 1, y);
             if (points.isEmpty()) {
                 break;
+            }
+
+            for (GridPoint point : points) {
+                if (point.getY() != y) {
+                    traceRow(point.getX(), point.getY());
+                }
             }
 
             x--;
@@ -400,15 +434,21 @@ public class Board {
 
         // Check the components on the board for any which have a connection point here
         for (Component component : components) {
-            List<GridPoint> points = component.getConnectedPoints(x - component.getX(), y - component.getY());
+            int component_x = x - component.getX();
+            int component_y = y - component.getY();
+            List<ConnectionPoint> points = component.getConnectedPoints(component_x, component_y);
 
             if (points != null) {
                 // The component has something to say, because this point matched one of its connection points
-                result.addAll(points);
+                for (ConnectionPoint point : points) {
+                    int grid_x = point.x + component.getX();
+                    int grid_y = point.y + component.getY();
+                    result.add(new GridPoint(grid_x, grid_y));
+                }
                 foundComponent = true;
             }
         }
-        
+
         // If the components had nothing to contribute just return the test point
         if (!foundComponent) {
             result.add(new GridPoint(x, y));

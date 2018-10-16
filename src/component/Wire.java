@@ -49,4 +49,18 @@ public class Wire extends Component {
         outline.setStroke(selected ? Color.BLUE : Board.COMPONENT_COLOR);
         outline.setStrokeWidth(selected ? 20 : 10);
     }
+
+    @Override
+    protected List<ConnectionPoint> getConnections(ConnectionPoint connection) {
+        List<ConnectionPoint> result = new ArrayList<>();
+        result.add(connection);
+
+        for (ConnectionPoint other: connections) {
+            if (!other.equals(connection)) {
+                result.add(other);
+            }
+        }
+        
+        return result;
+    }
 }

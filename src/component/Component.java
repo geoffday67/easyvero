@@ -154,14 +154,15 @@ public abstract class Component {
      * Get a list of connected points given an initial point. Returns null if
      * the point isn't one of this component's connections.
      */
-    public List<GridPoint> getConnectedPoints(int x, int y) {
+    public List<ConnectionPoint> getConnectedPoints(int x, int y) {
         for (ConnectionPoint point : connections) {
             if (point.x == x && point.y == y) {
-                List<GridPoint> result = new ArrayList<>();
+                return getConnections(point);
+                /*List<GridPoint> result = new ArrayList<>();
                 for (ConnectionPoint connected : getConnections(point)) {
                     result.add(new GridPoint(connected.x, connected.y));
                 }
-                return result;
+                return result;*/
             }
         }
 
