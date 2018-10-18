@@ -11,6 +11,7 @@ import component.DIL;
 import component.Label;
 import component.Resistor;
 import component.SIL;
+import component.Terminal;
 import component.Wire;
 import static easyvero.EasyVero.objectMapper;
 import java.io.IOException;
@@ -279,6 +280,10 @@ public class Board {
             case EasyVero.RESISTOR_ID:
                 target = new Resistor();
                 break;
+                
+            case EasyVero.TERMINAL_ID:
+                target = new Terminal();
+                break;
         }
         if (target == null) {
             return null;
@@ -362,59 +367,6 @@ public class Board {
         traceGroup.getChildren().add(segment);
     }
     
-    private void traceRowRight(int x, int y) {
-        Path segment = new Path();
-        segment.setStroke(Color.RED);
-        segment.setStrokeWidth(10);
-        segment.getElements().add(new MoveTo(x * 100, y * 100));
-
-        while (true) {
-            // Look at the point to the right of where we are, see how many points to add the trace.
-            List<GridPoint> points = getTraceablePoints(x + 1, y);
-            if (points.isEmpty()) {
-                // None, we've finished with this row
-                break;
-            }
-
-            // Look at the connected points, if there are any from another row then start tracing that row.
-            for (GridPoint point : points) {
-                if (point.getY() != y) {
-                    traceRow(point.getX(), point.getY());
-                }
-            }
-
-            x++;
-        }
-
-        segment.getElements().add(new LineTo(x * 100, y * 100));
-        traceGroup.getChildren().add(segment);
-    }
-
-    private void traceRowLeft(int x, int y) {
-        Path segment = new Path();
-        segment.setStroke(Color.RED);
-        segment.setStrokeWidth(10);
-        segment.getElements().add(new MoveTo(x * 100, y * 100));
-
-        while (true) {
-            List<GridPoint> points = getTraceablePoints(x - 1, y);
-            if (points.isEmpty()) {
-                break;
-            }
-
-            for (GridPoint point : points) {
-                if (point.getY() != y) {
-                    traceRow(point.getX(), point.getY());
-                }
-            }
-
-            x--;
-        }
-
-        segment.getElements().add(new LineTo(x * 100, y * 100));
-        traceGroup.getChildren().add(segment);
-    }
-
     /**
      * Get a list of points to add to the trace. Could be zero, one or more
      * points.

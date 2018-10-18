@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.prefs.Preferences;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.print.PrinterJob;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -42,6 +43,7 @@ public class EasyVero extends Application {
     public final static String TEXT_ID = "text";
     public final static String RESISTOR_ID = "resistor";
     public final static String TRACE_ID = "trace";
+    public final static String TERMINAL_ID = "terminal";
 
     private final static ToggleGroup toolGroup = new ToggleGroup();
 
@@ -113,8 +115,12 @@ public class EasyVero extends Application {
         traceButton.setToggleGroup(toolGroup);
         traceButton.setUserData(TRACE_ID);
 
+        RadioButton terminalButton = new RadioButton("Terminal");
+        terminalButton.setToggleGroup(toolGroup);
+        terminalButton.setUserData(TERMINAL_ID);
+
         toolGroup.selectToggle(selectButton);
-        ToolBar toolBar = new ToolBar(selectButton, traceButton, breakButton, wireButton, DILButton, SILButton, textButton, resistorButton);
+        ToolBar toolBar = new ToolBar(selectButton, traceButton, breakButton, wireButton, DILButton, SILButton, textButton, resistorButton, terminalButton);
 
         // Menu
         MenuItem newItem = new MenuItem("New");
@@ -125,10 +131,19 @@ public class EasyVero extends Application {
         saveItem.setOnAction(event -> save());
         MenuItem saveAsItem = new MenuItem("Save as");
         saveAsItem.setOnAction(event -> saveAs());
+        MenuItem printItem = new MenuItem("Print");
+        printItem.setOnAction(event -> print());
         Menu fileMenu = new Menu("File");
-        fileMenu.getItems().addAll(newItem, new SeparatorMenuItem(), openItem, new SeparatorMenuItem(), saveItem, saveAsItem);
+        fileMenu.getItems().addAll(newItem, new SeparatorMenuItem(), openItem, new SeparatorMenuItem(), saveItem, saveAsItem, new SeparatorMenuItem(), printItem);
+
+        MenuItem shrinkItem = new MenuItem("Shrink");
+        shrinkItem.setOnAction(event -> shrinkBoard());
+        
+        Menu boardMenu = new Menu("Board");
+        boardMenu.getItems().addAll(shrinkItem);
+        
         MenuBar menuBar = new MenuBar();
-        menuBar.getMenus().addAll(fileMenu);
+        menuBar.getMenus().addAll(fileMenu, boardMenu);
 
         main.setTop(new VBox(menuBar, toolBar));
 
@@ -143,8 +158,12 @@ public class EasyVero extends Application {
         stage.sizeToScene();
         stage.setOnCloseRequest(ignore -> handleClose());
         stage.show();
-        
+
         loadBoardFile();
+    }
+    
+    private void shrinkBoard() {
+        
     }
 
     private void handleClose() {
@@ -267,6 +286,18 @@ public class EasyVero extends Application {
         }
 
         loadFromFile(file);
+    }
+
+    private void print() {
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job != null) {
+            if (job.showPrintDialog(stage)) {
+                boolean success = job.printPage(board.getGroup());
+                if (success) {
+                    job.endJob();
+                }
+            }
+        }
     }
 
     /**

@@ -23,7 +23,7 @@ import javafx.scene.transform.Translate;
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Component {
 
-    static protected Font valueFont = new Font(80);
+    static protected Font valueFont = new Font("Verdana", 80);
     static protected Border testBorder = new Border(new BorderStroke(Color.RED, BorderStrokeStyle.DASHED, CornerRadii.EMPTY, new BorderWidths(10)));
 
     // Members which define how to create this component (save these)
