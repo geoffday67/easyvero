@@ -17,6 +17,7 @@ import static easyvero.EasyVero.objectMapper;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -280,7 +281,7 @@ public class Board {
             case EasyVero.RESISTOR_ID:
                 target = new Resistor();
                 break;
-                
+
             case EasyVero.TERMINAL_ID:
                 target = new Terminal();
                 break;
@@ -329,8 +330,11 @@ public class Board {
         }
     }
 
+    List<HorzTraceSegment> traceFound = new ArrayList<>();
+
     private void trace(int x, int y) {
         traceGroup.getChildren().clear();
+        traceFound.clear();
         traceRow(x, y);
     }
 
@@ -344,19 +348,33 @@ public class Board {
         segment.setStroke(Color.RED);
         segment.setStrokeWidth(10);
         segment.getElements().add(new MoveTo(x * 100, y * 100));
+        HorzTraceSegment trace = new HorzTraceSegment(y);
+        trace.start = x;
+
+        List<GridPoint> newPoints = new ArrayList<>();
 
         while (true) {
-            // Look at the point to the side of where we are, see how many points to add the trace.
+            // Look at the point to the side of where we are, see how many points to add the trace, removing those which are already known.
             List<GridPoint> points = getTraceablePoints(x + dx, y);
+            Iterator<GridPoint> iterator = points.iterator();
+            while (iterator.hasNext()) {
+                GridPoint point = iterator.next();
+                for (HorzTraceSegment existing : traceFound) {
+                    if (existing.contains(point.getX(), point.getY())) {
+                        iterator.remove();
+                    }
+                }
+            }
+
             if (points.isEmpty()) {
                 // None, we've finished with this row
                 break;
             }
 
-            // Look at the connected points, if there are any from another row then start tracing that row.
+            // Look at the connected points, if there are any from another row then start tracing that row later.
             for (GridPoint point : points) {
                 if (point.getY() != y) {
-                    traceRow(point.getX(), point.getY());
+                    newPoints.add(point);
                 }
             }
 
@@ -365,8 +383,16 @@ public class Board {
 
         segment.getElements().add(new LineTo(x * 100, y * 100));
         traceGroup.getChildren().add(segment);
+
+        trace.end = x;
+        traceFound.add(trace);
+
+        // Trace new rows after we add this row.
+        for (GridPoint point : newPoints) {
+            traceRow(point.getX(), point.getY());
+        }
     }
-    
+
     /**
      * Get a list of points to add to the trace. Could be zero, one or more
      * points.

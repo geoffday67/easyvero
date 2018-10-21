@@ -102,17 +102,18 @@ public class DIL extends Component {
         result.setVgap(10);
 
         result.add(new Label("Pins"), 0, 0);
-        Spinner<Integer> pinsSpinner = new Spinner(6, 100, 8, 2);
+        Spinner<Integer> pinsSpinner = new Spinner<>(6, 100, 6, 2);
         pinsSpinner.setId("pins");
-        pinsSpinner.setEditable(true);
+        //pinsSpinner.setEditable(true);
         if (pins > 0) {
             pinsSpinner.getValueFactory().setValue(pins);
         }
         result.add(pinsSpinner, 1, 0);
 
         result.add(new Label("Span"), 0, 1);
-        Spinner spanSpinner = new Spinner(1, 100, 2);
+        Spinner<Integer> spanSpinner = new Spinner<>(1, 100, 2);
         spanSpinner.setId("span");
+        //spanSpinner.setEditable(true);
         if (span > 0) {
             spanSpinner.getValueFactory().setValue(span);
         }
